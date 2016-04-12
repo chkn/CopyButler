@@ -46,7 +46,7 @@ type PasteboardStack(pb : NSPasteboard) =
     let makeItem data =
         let item = new NSPasteboardItem()
         let provider = new PasteboardProvider(data, onPaste)
-        item.SetDataProviderForTypes(provider, data |> Array.map (fun (_, t) -> t)) |> ignore
+        item.SetDataProviderForTypes(provider, data |> Array.map snd) |> ignore
         item :> INSPasteboardWriting
 
     member __.CheckAndPushIfNecessary() =

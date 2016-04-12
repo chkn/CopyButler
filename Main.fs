@@ -45,7 +45,7 @@ type AppDelegate() =
         menu.AddItem <| new NSMenuItem("Record Copied Items", fun s e -> s :?> _ |> toggleMenuItem |> enablePasteboardTimer)
         menu.AddItem <| new NSMenuItem("Clear Copy Stack", fun s e -> pasteboardStack.Clear())
         menu.AddItem <| NSMenuItem.SeparatorItem
-        menu.AddItem <| new NSMenuItem(sprintf "Quit %s" AppName, fun s e -> App.Terminate(this))
+        menu.AddItem <| new NSMenuItem("Quit " + AppName, fun s e -> App.Terminate(this))
         item.Menu <- menu
 
 App.Delegate <- new AppDelegate() :> INSApplicationDelegate
