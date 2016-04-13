@@ -7,9 +7,6 @@ open ObjCRuntime
 open CopyButler
 
 NSApplication.Init ()
-
-[<Literal>]
-let AppName = "CopyButler"
 let App = NSApplication.SharedApplication
 
 let toggleMenuItem (mi : NSMenuItem) =
@@ -42,10 +39,10 @@ type AppDelegate() =
         item.Button.Title <- "🍻"
         
         let menu = new NSMenu()
-        menu.AddItem <| new NSMenuItem("Record Copied Items", fun s e -> s :?> _ |> toggleMenuItem |> enablePasteboardTimer)
-        menu.AddItem <| new NSMenuItem("Clear Copy Stack", fun s e -> pasteboardStack.Clear())
+        menu.AddItem <| new NSMenuItem("Enable Copy/Paste Stack", fun s e -> s :?> _ |> toggleMenuItem |> enablePasteboardTimer)
+        menu.AddItem <| new NSMenuItem("Clear Stack", fun s e -> pasteboardStack.Clear())
         menu.AddItem <| NSMenuItem.SeparatorItem
-        menu.AddItem <| new NSMenuItem("Quit " + AppName, fun s e -> App.Terminate(this))
+        menu.AddItem <| new NSMenuItem("Quit", fun s e -> App.Terminate(this))
         item.Menu <- menu
 
 App.Delegate <- new AppDelegate() :> INSApplicationDelegate
