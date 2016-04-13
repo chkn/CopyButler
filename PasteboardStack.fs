@@ -13,17 +13,17 @@ type PasteboardStack(pb : NSPasteboard) =
     let mutable lastChange = nint 0
 
     let rec onPaste() =
-        // Pop the item that was just pasted
-        if stack.Count > 0 then
+        // Pop the item that was just pasted (don't pop the last item)
+        if stack.Count > 1 then
             stack.Pop() |> ignore
-        // Set the next item to the pasteboard
-        //  We need to defer this, otherwise it screws up
-        //  the current paste operation..
-        NSTimer.CreateScheduledTimer(0.1, fun _ ->
-            if stack.Count > 0 then
-                stack.Peek() |> setPb
-        )
-        |> ignore
+            // Set the next item to the pasteboard
+            //  We need to defer this, otherwise it screws up
+            //  the current paste operation..
+            NSTimer.CreateScheduledTimer(0.1, fun _ ->
+                if stack.Count > 0 then
+                    stack.Peek() |> setPb
+            )
+            |> ignore
 
     // Sets an item to the pasteboard without causing it
     //  to be pushed onto the stack..
