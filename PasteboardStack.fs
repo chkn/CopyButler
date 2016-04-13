@@ -55,18 +55,18 @@ type PasteboardStack(pb : NSPasteboard) =
             match pb.PasteboardItems with
             | null  -> ()
             | items ->
-                let datas = items
-                            |> Array.choose (fun oldItem ->
-                                match oldItem.Types with
-                                | null  -> None
-                                | types ->
-                                    types
-                                    |> Array.choose (fun t -> 
-                                        match oldItem.GetDataForType(t) with
-                                        | null -> None
-                                        | d    -> Some (d, t)
-                                    )
-                                    |> Some
-                            )
-                setPb datas
-                stack.Push(datas)
+                let data = items
+                           |> Array.choose (fun oldItem ->
+                               match oldItem.Types with
+                               | null  -> None
+                               | types ->
+                                   types
+                                   |> Array.choose (fun t ->
+                                       match oldItem.GetDataForType(t) with
+                                       | null -> None
+                                       | d    -> Some (d, t)
+                                   )
+                                   |> Some
+                           )
+                setPb data
+                stack.Push(data)
