@@ -7,48 +7,46 @@ open AppKit
 open Foundation
 open ObjCRuntime
 
-type PasteboardItems = INSPasteboardWriting array
-
-type PasteboardProvider(data, onPaste) =
-    inherit NSPasteboardItemDataProvider()
-    override __.ProvideDataForType(_, item, _) =
-        for (d, t) in data do
-            item.SetDataForType(d, t) |> ignore
-        onPaste()
-    override __.FinishedWithDataProvider(_) = ()
-
 type PasteboardStack(pb : NSPasteboard) =
 
+    let stack = Stack<_>()
     let mutable lastChange = nint 0
-    let stack = Stack<PasteboardItems>()
 
-    // Sets an item to the pasteboard without causing it
-    //  to be pushed onto the stack..
-    let setPb (items : PasteboardItems) =
-        pb.ClearContents() |> ignore
-        pb.WriteObjects(items) |> ignore
-        lastChange <- pb.ChangeCount
-
-    // Pops an item from the stack (if there is one) and sets it to the pasteboard
-    let popAndSet() =
+    let rec onPaste() =
+        // Pop the item that was just pasted
         if stack.Count > 0 then
-            stack.Pop() |> setPb
-
-    let onPaste() =
-        if stack.Count > 0 then
-            // Pop the item that was just pasted
             stack.Pop() |> ignore
         // Set the next item to the pasteboard
         //  We need to defer this, otherwise it screws up
         //  the current paste operation..
-        NSTimer.CreateScheduledTimer(0.1, fun _ -> popAndSet()) |> ignore
+        NSTimer.CreateScheduledTimer(0.1, fun _ ->
+            if stack.Count > 0 then
+                stack.Peek() |> setPb
+        )
+        |> ignore
 
-    let makeItem data =
+    // Sets an item to the pasteboard without causing it
+    //  to be pushed onto the stack..
+    and setPb data =
+        let items : INSPasteboardWriting array = Array.map makeItem data
+        pb.ClearContents() |> ignore
+        pb.WriteObjects(items) |> ignore
+        lastChange <- pb.ChangeCount
+
+    and makeItem data =
         let item = new NSPasteboardItem()
-        let provider = new PasteboardProvider(data, onPaste)
-        item.SetDataProviderForTypes(provider, data |> Array.map snd) |> ignore
+        let provider = {
+            new NSPasteboardItemDataProvider() with
+                override __.FinishedWithDataProvider(_) = ()
+                override __.ProvideDataForType(_, item, _) =
+                    for (d, t) in data do
+                        item.SetDataForType(d, t) |> ignore
+                    onPaste()
+        }
+        item.SetDataProviderForTypes(provider, Array.map snd data) |> ignore
         item :> INSPasteboardWriting
 
+    member __.Clear() = stack.Clear()
     member __.CheckAndPushIfNecessary() =
         if pb.ChangeCount <> lastChange then
             lastChange <- pb.ChangeCount
@@ -66,15 +64,9 @@ type PasteboardStack(pb : NSPasteboard) =
                                     |> Array.choose (fun t -> 
                                         match oldItem.GetDataForType(t) with
                                         | null -> None
-                                        | d    -> Some (d.MutableCopy() :?> NSData, t)
+                                        | d    -> Some (d, t)
                                     )
                                     |> Some
                             )
-                // Unfortunately, we need to create 2 separate NSPasteboardItems,
-                //  one to set back to the pasteboard immediately, and one to push on the stack.
-                datas |> Array.map makeItem |> setPb
-                datas |> Array.map makeItem |> stack.Push |> ignore
-
-    member __.Push([<ParamArrayAttribute>] items : PasteboardItems) = stack.Push(items)
-    member __.Pop() = popAndSet()
-    member __.Clear() = stack.Clear()
+                setPb datas
+                stack.Push(datas)
